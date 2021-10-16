@@ -49,7 +49,7 @@ const CourseSchema = new mongoose.Schema({
 // is accessible directly from an API object's constructor, rather than from an object
 //instance created via the constructor.
 CourseSchema.statics.getAverageCost = async function (bootcampId) {
-  console.log('Calculating avg cost...'.blue)
+  // console.log('Calculating avg cost...'.blue)
 
   const obj = await this.aggregate([
     {
