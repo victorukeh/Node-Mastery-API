@@ -18,6 +18,8 @@ const app = express()
 //Body Parser
 app.use(express.json())
 
+global._basedir = __dirname 
+
 // Morgan Dev logging middleware
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'))
@@ -26,10 +28,12 @@ if (process.env.NODE_ENV === 'development') {
 //Route files
 const bootcamps = require('./routes/bootcamps')
 const courses = require('./routes/courses')
+const uploadFile = require('./routes/uploadfile')
 
 //Mount routers
 app.use('/api/v1/bootcamps', bootcamps)
 app.use('/api/v1/courses', courses)
+app.use('/api/uploadfile', uploadFile)
 
 app.use(errorHandler)
 
