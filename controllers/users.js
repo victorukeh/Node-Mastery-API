@@ -1,6 +1,8 @@
+const crypto = require('crypto')
 const ErrorResponse = require('../utils/errorResponse')
 const asyncHandler = require('../middleware/async')
 const User = require('../models/User')
+const sendEmail = require('../utils/sendEmail')
 
 //@desc     Register User
 //@route    POST api/vi/auth/register
@@ -66,13 +68,60 @@ exports.forgotPassword = asyncHandler(async (req, res, next) => {
   }
 
   const resetToken = user.getResetPasswordToken()
-  await user.save({validateBeforeSave: false})
+  await user.save({ validateBeforeSave: false })
+
+  //Create reset url
+  const resetUrl = `${req.protocol}://${req.get(
+    'host'
+  )}/api/v1/resetpassword/${resetToken}`
+
+  const message = `You are receiving this email because you (or someone else) has requested the reset of your password. Please make a PUT request to: \n\n ${resetUrl}`
+  try {
+    await sendEmail({
+      email: user.email,
+      subject: 'Password reset token',
+      message,
+    })
+  } catch (err) {
+    console.log(err)
+    user.resetPasswordToken = undefined
+    user.resetPasswordExpire = undefined
+
+    await user.save({ validateBeforeSave: false })
+    return next(new ErrorResponse('Email could not be sent', 500))
+  }
   res.status(200).json({
     success: true,
-    data: user,
-  })                                                                                        
+    data: 'Email sent',
+  })
 })
 
+//@desc   Reset Password
+//@route  PUT api/v1/resetpassword/:resetToken
+//@access Public
+exports.resetPassword = asyncHandler(async (req, res, next) => {
+  const resetPasswordToken = crypto
+    .hash('sha256')
+    .update(req.params.resetToken)
+    .digest('hex')
+
+    const user = User.findOne({
+      resetPasswordToken,
+      resetPasswordExpire: {$gt: Date.now()}
+    })
+
+    if(!user){
+      return next(new ErrorResponse('Invalid Token', 401))
+    }
+
+    //Set new Password
+    user.password = req.body.password
+    user.resetPasswordToken = undefined
+    user.resetPasswordExpire = undefined
+    await user.save()
+
+    sendTokenResponse(user, 200, res)
+})
 //Get token from model, create cookie and send response
 const sendTokenResponse = (user, statusCode, res) => {
   // Create Token
