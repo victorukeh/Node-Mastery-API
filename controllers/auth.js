@@ -4,7 +4,6 @@ const asyncHandler = require('../middleware/async')
 const sendEmail = require('../utils/sendEmail')
 const User = require('../models/User')
 
-
 //@desc     Register User
 //@route    POST api/vi/auth/register
 //@access   Public
@@ -60,34 +59,34 @@ exports.getMe = asyncHandler(async (req, res, next) => {
 //@desc     Update user details
 //@route    PUT /api/v1/auth/updatedetails
 //@access   Private
-exports.updateDetails = asyncHandler(async(req, res, next) => {
+exports.updateDetails = asyncHandler(async (req, res, next) => {
   const fieldsToUpdate = {
     name: req.body.name,
-    email: req.body.email
+    email: req.body.email,
   }
 
   const user = await User.findByIdAndUpdate(req.user.id, fieldsToUpdate, {
     new: true,
-    runValidators: true 
+    runValidators: true,
   })
 
   res.status(200).json({
     success: true,
-    data: user
+    data: user,
   })
 })
 
 //@desc     Update Password
 //@route    PUT api/v1/auth/updatepassword
 //@access   Private
-exports.updatePassword = asyncHandler(async(req, res, next) => {
+exports.updatePassword = asyncHandler(async (req, res, next) => {
   const user = await User.findById(req.user.id).select('+password')
 
-  if(!user){
+  if (!user) {
     return next(new ErrorResponse('Input new Password', 404))
   }
   //Chheck current password
-  if(!await user.matchPassword(req.body.currentPassword)){
+  if (!(await user.matchPassword(req.body.currentPassword))) {
     return next(new ErrorResponse('Password is incorrect', 401))
   }
 
@@ -146,25 +145,40 @@ exports.resetPassword = asyncHandler(async (req, res, next) => {
     .update(req.params.resetToken)
     .digest('hex')
 
-    console.log(resetPasswordToken)
-    const user = await User.findOne({
-      resetPasswordToken,
-      resetPasswordExpire: {$gt: Date.now()}
-    })
+  console.log(resetPasswordToken)
+  const user = await User.findOne({
+    resetPasswordToken,
+    resetPasswordExpire: { $gt: Date.now() },
+  })
 
-    if(!user){
-      return next(new ErrorResponse('Invalid Token', 401))
-    }
+  if (!user) {
+    return next(new ErrorResponse('Invalid Token', 401))
+  }
 
-    //Set new Password
-    user.password = req.body.password
-    console.log(user.password)
-    user.resetPasswordToken = undefined
-    user.resetPasswordExpire = undefined
-    await user.save()
+  //Set new Password
+  user.password = req.body.password
+  console.log(user.password)
+  user.resetPasswordToken = undefined
+  user.resetPasswordExpire = undefined
+  await user.save()
 
-    sendTokenResponse(user, 200, res)
+  sendTokenResponse(user, 200, res)
 })
+
+// @desc      Log user out / clear cookie
+// @route     GET /api/v1/auth/logout
+// @access    Public
+exports.logout = asyncHandler(async (req, res, next) => {
+  res.cookie('token', 'none', {
+    expires: new Date(Date.now() + 10 * 1000),
+    httpOnly: true,
+  })
+  res.status(200).json({
+    success: true,
+    message: 'You have been logged out',
+  })
+})
+
 //Get token from model, create cookie and send response
 const sendTokenResponse = (user, statusCode, res) => {
   // Create Token

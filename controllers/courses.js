@@ -81,7 +81,6 @@ exports.addCourse = asyncHandler(async (req, res, next) => {
 //@desc   Update course
 //@route  PUT api/v1/courses/:id
 //@access Private
-
 exports.updateCourse = asyncHandler(async (req, res, next) => {
   let course = await Course.findById(req.params.id)
 
@@ -100,7 +99,7 @@ exports.updateCourse = asyncHandler(async (req, res, next) => {
       )
     )
   }
-console.log(req.user.id)
+
   course = await Course.findByIdAndUpdate(req.params.id, req.body, {
     new: true,
     runValidators: true,
