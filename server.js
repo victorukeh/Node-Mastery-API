@@ -38,12 +38,16 @@ app.use(express.static(path.join(__dirname, 'public')))
 //Route files
 const bootcamps = require('./routes/bootcamps')
 const courses = require('./routes/courses')
-const users = require('./routes/auth')
+const auth = require('./routes/auth')
+const users = require('./routes/users')
+const reviews = require('./routes/reviews')
 
 //Mount routers
 app.use('/api/v1/bootcamps', bootcamps)
 app.use('/api/v1/courses', courses)
-app.use('/api/v1/auth', users)
+app.use('/api/v1/auth', auth)
+app.use('/api/v1/users', users)
+app.use('/api/v1/reviews', reviews)
 
 app.use(errorHandler)
 

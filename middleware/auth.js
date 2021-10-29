@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken')
-const asyncHandler = require('../middleware/async')
+const asyncHandler = require('./async')
 const ErrorResponse = require('../utils/errorResponse')
 const User = require('../models/User')
 
@@ -24,7 +24,12 @@ exports.protect = asyncHandler(async (req, res, next) => {
   try {
     //Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET)
+    // console.log(decoded)
+    // console.log(decoded.id)
     req.user = await User.findById(decoded.id)
+//     if(req.user === null){
+// console.log("wahala dey oo")
+//     }
     next()
   } catch (err) {
     return next(new ErrorResponse('Not authorized to access this route', 401))
@@ -40,6 +45,7 @@ exports.protect = asyncHandler(async (req, res, next) => {
 exports.authorize = (...roles) => {
   return (req, res, next) => {
     // if user's role is not among the set roles in "...roles" then
+    console.log(req.user)
     if (!roles.includes(req.user.role)) {
       return next(
         new ErrorResponse(
